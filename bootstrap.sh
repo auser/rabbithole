@@ -33,5 +33,5 @@ cd $DEPSDIR
 
 # Download rebar deps
 (
-  make get-deps
+  make deps
 )
