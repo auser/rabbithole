@@ -55,9 +55,7 @@ stop() -> gen_server:call(?MODULE, stop).
 %%--------------------------------------------------------------------
 init([]) ->
   case catch amqp_connection:start_network() of
-    {error, P} ->
-      erlang:display({exit, P}),
-      throw({error, P});
+    {error, P} -> {stop, P};
     Conn ->
       Channel = amqp_connection:open_channel(Conn),
       {ok, #state{connection = Conn, channel = Channel}}

@@ -17,7 +17,7 @@ starting_test_() ->
       fun teardown/1,
       [
         fun rabbitmq_basic_tests/0,
-        fun dqueue_basic_tests/0
+        fun squirrel_basic_tests/0
       ]
     }
   }.
@@ -48,8 +48,8 @@ callback({msg, Msg}) ->
 message_callback({add, Int}) -> test_server:add(Int);
 message_callback(_Else) -> ok.
 
-dqueue_basic_tests() ->
-  rabbithole_app:start([], [dqueue]),
+squirrel_basic_tests() ->
+  rabbithole_app:start([], [squirrel]),
   Queue = 
   Queue = "a.b.c",
   ?assert(ok =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
