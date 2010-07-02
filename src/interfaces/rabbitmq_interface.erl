@@ -57,7 +57,7 @@ init([]) ->
   case catch amqp_connection:start_network() of
     {error, P} ->
       erlang:display({exit, P}),
-      {stop, P};
+      throw({error, P});
     Conn ->
       Channel = amqp_connection:open_channel(Conn),
       {ok, #state{connection = Conn, channel = Channel}}
