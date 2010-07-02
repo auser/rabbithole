@@ -11,6 +11,7 @@
 -export([
   subscribe/1, subscribe/2, % subscribe to a queue
   publish/2, publish/3,     % publish a message to a queue
+  list/1,                   % list queues
   start_link/1              % start it up
 ]).
 
@@ -36,6 +37,8 @@ subscribe(QueueName, Props)     -> gen_server:call(?SERVER, {subscribe, {QueueNa
 publish(QueueName, Msg)         -> publish(QueueName, Msg, []).
 publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName, Msg, Props}}).
 
+list(Type)                      -> gen_server:call(?SERVER, {list, Type}).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -48,11 +51,12 @@ publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([InterfaceName]) ->
-  Interface = interface_mod(InterfaceName),
-  RealInterface = case (catch rabbithole_sup:start_interface(Interface, [])) of
-    {ok, _} = _T -> Interface;
-    _Else -> gproc_interface
-  end,
+  % Interface = interface_mod(InterfaceName),
+  % RealInterface = case (catch rabbithole_sup:start_interface(Interface, [])) of
+  %   {ok, _} = _T -> Interface;
+  %   _Else -> gproc_interface
+  % end,
+  RealInterface = gproc_interface,
   {ok, RealInterface}.
 
 
@@ -74,6 +78,10 @@ handle_call({subscribe, Args}, _From, Interface) ->
   
 handle_call({publish, Args}, _From, Interface) ->
   Reply = Interface:publish(Args),
+  {reply, Reply, Interface};
+
+handle_call({list, Type}, _From, Interface) ->
+  Reply = Interface:list(Type),
   {reply, Reply, Interface};
 
 handle_call(_Req, _From, Interface) ->

@@ -52,12 +52,12 @@ gproc_basic_tests() ->
   rabbithole_app:start([], [gproc]),
   Queue = 
   Queue = "a.b.c",
-  ?assert(ok =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
+  ?assert(true =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
   rabbithole:publish(Queue, {add, 1}),
   timer:sleep(10),
-  ?assert(12 == test_server:get_value()),
+  ?assert(1 == test_server:get_value()),
   rabbithole:publish(Queue, {add, 10}),
   timer:sleep(10),
-  ?assert(22 == test_server:get_value()),
+  ?assert(11 == test_server:get_value()),
   rabbithole_app:stop([]),
   passed.

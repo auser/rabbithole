@@ -4,7 +4,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/1, start_child/1, start_interface/2]).
+-export([start_link/1, start_child/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -26,13 +26,13 @@
 start_child(Args) ->
   supervisor:start_child(workers_sup, Args).
   
-start_interface(Mod, _Args) ->
-  case catch supervisor:start_link(rabbithole_interface_sup, [Mod]) of
-    {ok, _} = T -> T;
-    X -> 
-      erlang:display({start_interface, Mod, X}),
-      X
-  end.
+% start_interface(Mod, _Args) ->
+%   case catch supervisor:start_link(rabbithole_interface_sup, [Mod]) of
+%     {ok, _} = T -> T;
+%     X -> 
+%       erlang:display({start_interface, Mod, X}),
+%       X
+%   end.
 
 start_link(Args) ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, [Args]).
@@ -42,14 +42,13 @@ start_link(Args) ->
 %% ===================================================================
 
 init([Args]) ->
-  erlang:display({init, Args}),
   Server    =  ?NAMED_CHILD(rabbithole, rabbithole, [Args], worker),
-  WorkerSup  = ?SUP_CHILD(workers_sup, [{local, workers_sup}, ?MODULE, [[]]]), 
-  InterfaceSup = ?SUP_CHILD(rabbithole_interface_sup, [rabbithole_interface_sup, [rabbithole_srv]]),
-  % Gproc     =  ?SUP_CHILD(gproc_sup, [{local, gproc_sup}, gproc_sup, []]),
+  % WorkerSup  = ?SUP_CHILD(workers_sup, [{local, workers_sup}, ?MODULE, [[]]]), 
+  % InterfaceSup = ?SUP_CHILD(rabbithole_interface_sup, [rabbithole_interface_sup, [rabbithole_srv]]),
+  Gproc     =  ?SUP_CHILD(gproc_sup, [{local, gproc_sup}, gproc_sup, []]),
     
-  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [InterfaceSup, Server, WorkerSup]}};
+  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Gproc, Server]}};
 
-init([Mod, _Props]) ->
-  Child = ?NAMED_CHILD(undefined, Mod, [], worker),
+init([Mod, Props]) ->
+  Child = ?NAMED_CHILD(undefined, Mod, Props, worker),
   {ok, {{simple_one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Child]}}.
