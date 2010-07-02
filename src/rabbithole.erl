@@ -54,7 +54,6 @@ init(InterfaceName) ->
       erlang:display({got, ok, E}),
       T;
     E ->
-      erlang:display({got, E}),
       rabbithole_sup:start_interface(dqueue_interface, [])
   end,
   {ok, Interface}.
