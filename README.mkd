@@ -1,0 +1,12 @@
+RabbitHole
+---
+
+A library for dealing with queues in erlang.
+
+
+Quickstart
+===
+
+    ./bootstrap
+    make
+    ./start.sh
