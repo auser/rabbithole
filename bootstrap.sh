@@ -31,6 +31,15 @@ cd $DEPSDIR
   make 
 )
 
+# Make sure gproc is available
+(
+  if [ ! -d "$DEPSDIR/gproc" ]; then
+    git clone git://github.com/auser/gproc.git
+  fi
+  cd gproc
+  make 
+)
+
 # Download rebar deps
 (
   make deps

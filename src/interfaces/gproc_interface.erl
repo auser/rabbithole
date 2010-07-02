@@ -1,4 +1,4 @@
--module (squirrel_interface).
+-module (gproc_interface).
 -export ([
   subscribe/1,
   publish/1
@@ -9,15 +9,14 @@
   stop/0
 ]).
 
-init([]) -> 
-  application:start(squirrel).
+init([]) -> ok.
 
-subscribe({QueueName, Props}) -> 
+subscribe({_QueueName, Props}) -> 
   Fun = get_value(callback, fun unhandled/1, Props),
-  squirrel:subscribe(QueueName, Fun).
+  gproc:reg({p, 1, {Fun}}, []).
 
 publish({QueueName, Msg, _Props}) ->
-  squirrel:publish(QueueName, Msg).
+  gproc:publish(QueueName, Msg).
 
 unhandled(Msg) ->
   io:format("Unhandled subscribe got message: ~p~n", [Msg]).

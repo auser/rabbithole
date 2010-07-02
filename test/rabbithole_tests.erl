@@ -2,7 +2,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 setup() ->
-  % application:start(sasl),
+  application:start(sasl),
   test_server:start(),
   ok.
   
@@ -16,8 +16,8 @@ starting_test_() ->
       fun setup/0,
       fun teardown/1,
       [
-        fun rabbitmq_basic_tests/0,
-        fun squirrel_basic_tests/0
+        fun gproc_basic_tests/0
+        % fun rabbitmq_basic_tests/0
       ]
     }
   }.
@@ -48,8 +48,8 @@ callback({msg, Msg}) ->
 message_callback({add, Int}) -> test_server:add(Int);
 message_callback(_Else) -> ok.
 
-squirrel_basic_tests() ->
-  rabbithole_app:start([], [squirrel]),
+gproc_basic_tests() ->
+  rabbithole_app:start([], [gproc]),
   Queue = 
   Queue = "a.b.c",
   ?assert(ok =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),

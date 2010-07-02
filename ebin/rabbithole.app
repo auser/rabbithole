@@ -8,7 +8,7 @@
              rabbithole, rabbithole_srv,
              % Interfaces
              rabbithole_interface_sup,
-             squirrel_interface, rabbitmq_interface
+             gproc_interface, rabbitmq_interface
             ]},
   {registered, []},
   {applications, [

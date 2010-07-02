@@ -27,8 +27,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link([])                  -> start_link("rabbitmq");
-start_link(Interface)           -> gen_server:start_link({local, ?SERVER}, ?MODULE, [Interface], []).
+start_link([])                  -> throw({error, no_interface_specified});
+start_link(Interface)           -> gen_server:start_link({local, ?SERVER}, ?MODULE, Interface, []).
 
 subscribe(QueueName)            -> subscribe(QueueName, []).
 subscribe(QueueName, Props)     -> gen_server:call(?SERVER, {subscribe, {QueueName, Props}}).
@@ -47,24 +47,17 @@ publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init(InterfaceName) ->
-  Interface = list_to_atom(lists:flatten([InterfaceName, "_interface"])),
-  RealInterface = case (catch Interface:start_link()) of
+init([InterfaceName]) ->
+  Interface = interface_mod(InterfaceName),
+  RealInterface = case (catch rabbithole_sup:start_interface(Interface, [])) of
     {ok, _} = _T -> Interface;
-    _Else ->
-      squirrel_interface:start_link(),
-      squirrel_interface
+    _Else -> gproc_interface
   end,
-  % case catch rabbithole_sup:start_interface(Interface, []) of
-  %   {ok, _} = T -> T;
-  %   {'EXIT', P} ->
-  %     erlang:display({error, P}),
-  %     rabbithole_sup:start_interface(squirrel_interface, []);
-  %   E ->
-  %     erlang:display({got, Interface, E}),
-  %     rabbithole_sup:start_interface(squirrel_interface, [])
-  % end,
   {ok, RealInterface}.
+
+
+interface_mod(List) when is_list(List) -> list_to_atom(lists:flatten([List, "_interface"]));
+interface_mod(Mod)  when is_atom(Mod) -> list_to_atom(lists:flatten([atom_to_list(Mod), "_interface"])).
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
