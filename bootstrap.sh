@@ -30,3 +30,8 @@ cd $DEPSDIR
   cd rabbitmq-erlang-client
   make 
 )
+
+# Download rebar deps
+(
+  make deps
+)

@@ -26,8 +26,12 @@
 start_child(Args) ->
   supervisor:start_child(workers_sup, [Args]).
   
-start_interface(Mod, Args) ->
-  supervisor:start_child(interface_sup, [Mod, Args]).
+start_interface(Mod, _Args) ->
+  case catch supervisor:start_link(rabbithole_interface_sup, [Mod]) of
+    X ->
+      erlang:display({start_interface, X}),
+      X
+  end.
 
 start_link(_Args) ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
@@ -39,15 +43,10 @@ start_link(_Args) ->
 init([]) ->
   Server    =  ?NAMED_CHILD(rabbithole, rabbithole, [[]], worker),
   WorkerSup  = ?SUP_CHILD(workers_sup, [{local, workers_sup}, ?MODULE, [[]]]), 
-  InterfaceSup = ?SUP_CHILD(interface_sup, [{local, interface_sup}, ?MODULE, [rabbithole_interface_srv, []]]),
+  InterfaceSup = ?SUP_CHILD(rabbithole_interface_sup, [rabbithole_interface_sup, []]),
     
-  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Server, WorkerSup, InterfaceSup]}};
+  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [InterfaceSup, Server, WorkerSup]}};
 
 init([_Props]) ->
   Child = ?NAMED_CHILD(undefined, rabbithole_srv, [], worker),
-  {ok, {{simple_one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Child]}};
-
-init([Mod, _Props]) ->
-  % Child = ?NAMED_CHILD(Mod, Mod, [], worker),
-  Child  = ?NAMED_CHILD(undefined, rabbithole_interface_srv, [], worker),
   {ok, {{simple_one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Child]}}.
