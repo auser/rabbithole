@@ -19,12 +19,8 @@
 %% API functions
 %% ===================================================================
 
-start_link(Args) ->
-  case catch supervisor:start_link({local, ?MODULE}, ?MODULE, [Args]) of
-    X ->
-      erlang:display({?MODULE, start_link, X}),
-      X
-  end.
+start_link(_Args) ->
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% ===================================================================
 %% Supervisor callbacks
@@ -35,5 +31,4 @@ init([]) ->
   
 init([Mod]) ->
   Server = ?CHILD(Mod, worker),
-  
-  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Server]}}.
+  {ok, {{simple_one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Server]}}.

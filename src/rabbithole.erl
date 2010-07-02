@@ -49,13 +49,22 @@ publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName
 %%--------------------------------------------------------------------
 init(InterfaceName) ->
   Interface = list_to_atom(lists:flatten([InterfaceName, "_interface"])),
-  case catch rabbithole_sup:start_interface(Interface, []) of
-    {ok, _} = T -> T;
-    E ->
-      erlang:display({got, Interface, E}),
-      rabbithole_sup:start_interface(squirrel_interface, [])
+  RealInterface = case (catch Interface:start_link()) of
+    {ok, _} = T -> Interface;
+    Else ->
+      squirrel_interface:start_link(),
+      squirrel_interface
   end,
-  {ok, Interface}.
+  % case catch rabbithole_sup:start_interface(Interface, []) of
+  %   {ok, _} = T -> T;
+  %   {'EXIT', P} ->
+  %     erlang:display({error, P}),
+  %     rabbithole_sup:start_interface(squirrel_interface, []);
+  %   E ->
+  %     erlang:display({got, Interface, E}),
+  %     rabbithole_sup:start_interface(squirrel_interface, [])
+  % end,
+  {ok, RealInterface}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
