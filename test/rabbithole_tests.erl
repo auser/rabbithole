@@ -48,8 +48,8 @@ callback({msg, Msg}) ->
 message_callback({add, Int}) -> test_server:add(Int);
 message_callback(_Else) -> ok.
 
-tee(Msg) ->
-  erlang:display({tee, Msg}).
+tee({msg, _Msg}) ->
+  ok.
 
 gproc_basic_tests() ->
   rabbithole_app:start([], [gproc]),
@@ -61,6 +61,7 @@ gproc_basic_tests() ->
   timer:sleep(10),
   ?assert(1 == test_server:get_value()),
   rabbithole:publish(Queue, {add, 10}),
+  rabbithole:publish(Queue2, {add, 1}),
   timer:sleep(10),
   ?assert(11 == test_server:get_value()),
   ?assert(['a.b.c', pete] == rabbithole:list(queues)),
