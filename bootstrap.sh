@@ -6,6 +6,7 @@ DEPSDIR="$ROOTDIR/$DDIR"
 
 RABBIT_VERSION="1.8.0"
 
+mkdir -p $DEPSDIR
 cd $DEPSDIR
 
 # Make sure rabbitmq-server is available
@@ -32,5 +33,5 @@ cd $DEPSDIR
 
 # Download rebar deps
 (
-  make deps
+  make get-deps
 )
