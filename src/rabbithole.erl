@@ -50,8 +50,8 @@ publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName
 init(InterfaceName) ->
   Interface = list_to_atom(lists:flatten([InterfaceName, "_interface"])),
   RealInterface = case (catch Interface:start_link()) of
-    {ok, _} = T -> Interface;
-    Else ->
+    {ok, _} = _T -> Interface;
+    _Else ->
       squirrel_interface:start_link(),
       squirrel_interface
   end,
