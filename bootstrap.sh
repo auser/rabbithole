@@ -24,7 +24,6 @@ cd $DEPSDIR
 # Make sure rabbitmq-erlang-client is available
 (
   if [ ! -d "$DEPSDIR/rabbitmq-erlang-client" ]; then
-    echo "NOT A DIR - $DEPSDIR/rabbitmq-erlang-client"
     hg clone http://hg.rabbitmq.com/rabbitmq-erlang-client/
   fi
   cd rabbitmq-erlang-client
