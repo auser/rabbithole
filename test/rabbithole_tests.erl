@@ -2,7 +2,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 setup() ->
-  application:start(sasl),
+  % application:start(sasl),
   test_server:start(),
   ok.
   
@@ -22,24 +22,24 @@ starting_test_() ->
     }
   }.
 
-rabbitmq_basic_tests() ->
-  try
-    rabbithole_app:start([], [rabbitmq]),
-    Queue = "a.b.c",
-    ?assert(ok =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
-    rabbithole:publish(Queue, erlang:term_to_binary({add, 1})),
-    timer:sleep(10),
-    ?assert(1 == test_server:get_value()),
-    rabbithole:publish(Queue, erlang:term_to_binary({add, 10})),
-    rabbithole:publish(Queue, erlang:term_to_binary({subtract, 10})),
-    timer:sleep(10),
-    ?assert(11 == test_server:get_value()),
-    rabbithole_app:stop([]),
-    passed
-  catch
-    throw:Error ->
-      Error
-  end.
+% rabbitmq_basic_tests() ->
+%   try
+%     rabbithole_app:start([], [rabbitmq]),
+%     Queue = "a.b.c",
+%     ?assert(ok =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
+%     rabbithole:publish(Queue, erlang:term_to_binary({add, 1})),
+%     timer:sleep(10),
+%     ?assert(1 == test_server:get_value()),
+%     rabbithole:publish(Queue, erlang:term_to_binary({add, 10})),
+%     rabbithole:publish(Queue, erlang:term_to_binary({subtract, 10})),
+%     timer:sleep(10),
+%     ?assert(11 == test_server:get_value()),
+%     rabbithole_app:stop([]),
+%     passed
+%   catch
+%     throw:Error ->
+%       Error
+%   end.
 
 callback({subscribed, _}) -> ok;
 callback({msg, Msg}) ->
@@ -48,9 +48,13 @@ callback({msg, Msg}) ->
 message_callback({add, Int}) -> test_server:add(Int);
 message_callback(_Else) -> ok.
 
+tee(Msg) ->
+  erlang:display({tee, Msg}).
+
 gproc_basic_tests() ->
   rabbithole_app:start([], [gproc]),
-  Queue = 
+  Queue2 = "pete",
+  ?assert(true =:= rabbithole:subscribe(Queue2, [{callback, fun tee/1}])),
   Queue = "a.b.c",
   ?assert(true =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
   rabbithole:publish(Queue, {add, 1}),
@@ -59,5 +63,6 @@ gproc_basic_tests() ->
   rabbithole:publish(Queue, {add, 10}),
   timer:sleep(10),
   ?assert(11 == test_server:get_value()),
+  ?assert(['a.b.c', pete] == rabbithole:list(queues)),
   rabbithole_app:stop([]),
   passed.

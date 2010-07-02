@@ -31,6 +31,15 @@ cd $DEPSDIR
   make 
 )
 
+# Make sure local132 is available
+(
+  if [ ! -d "$DEPSDIR/local132" ]; then
+    git clone git://github.com/auser/local132.git
+  fi
+  cd local132
+  make 
+)
+
 # Make sure gproc is available
 (
   if [ ! -d "$DEPSDIR/gproc" ]; then
