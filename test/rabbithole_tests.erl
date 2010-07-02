@@ -2,7 +2,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 setup() ->
-  application:start(sasl),
+  % application:start(sasl),
   test_server:start(),
   ok.
   

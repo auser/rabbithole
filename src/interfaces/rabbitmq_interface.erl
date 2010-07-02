@@ -54,7 +54,7 @@ stop() -> gen_server:call(?MODULE, stop).
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-  case catch amqp_connection:start_network() of
+  case (catch amqp_connection:start_network()) of
     {error, P} -> {stop, P};
     Conn ->
       Channel = amqp_connection:open_channel(Conn),

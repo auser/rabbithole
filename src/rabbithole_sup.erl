@@ -28,9 +28,7 @@ start_child(Args) ->
   
 start_interface(Mod, _Args) ->
   case catch supervisor:start_link(rabbithole_interface_sup, [Mod]) of
-    X ->
-      erlang:display({start_interface, X}),
-      X
+    X -> X
   end.
 
 start_link(_Args) ->
