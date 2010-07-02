@@ -50,7 +50,7 @@ list(Type)                      -> gen_server:call(?SERVER, {list, Type}).
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([InterfaceName]) ->
+init([_InterfaceName]) ->
   % Interface = interface_mod(InterfaceName),
   % RealInterface = case (catch rabbithole_sup:start_interface(Interface, [])) of
   %   {ok, _} = _T -> Interface;
@@ -59,9 +59,8 @@ init([InterfaceName]) ->
   RealInterface = gproc_interface,
   {ok, RealInterface}.
 
-
-interface_mod(List) when is_list(List) -> list_to_atom(lists:flatten([List, "_interface"]));
-interface_mod(Mod)  when is_atom(Mod) -> list_to_atom(lists:flatten([atom_to_list(Mod), "_interface"])).
+% interface_mod(List) when is_list(List) -> list_to_atom(lists:flatten([List, "_interface"]));
+% interface_mod(Mod)  when is_atom(Mod) -> list_to_atom(lists:flatten([atom_to_list(Mod), "_interface"])).
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
