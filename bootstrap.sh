@@ -6,6 +6,7 @@ DEPSDIR="$ROOTDIR/$DDIR"
 
 RABBIT_VERSION="1.8.0"
 
+mkdir -p $DEPSDIR
 cd $DEPSDIR
 
 # Make sure rabbitmq-server is available
@@ -27,6 +28,24 @@ cd $DEPSDIR
     hg clone http://hg.rabbitmq.com/rabbitmq-erlang-client/
   fi
   cd rabbitmq-erlang-client
+  make 
+)
+
+# Make sure local132 is available
+(
+  if [ ! -d "$DEPSDIR/local132" ]; then
+    git clone git://github.com/auser/local132.git
+  fi
+  cd local132
+  make 
+)
+
+# Make sure gproc is available
+(
+  if [ ! -d "$DEPSDIR/gproc" ]; then
+    git clone git://github.com/auser/gproc.git
+  fi
+  cd gproc
   make 
 )
 

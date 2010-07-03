@@ -9,8 +9,11 @@
 
 %% API
 -export([
+  submit_job/1,             % add a job
   subscribe/1, subscribe/2, % subscribe to a queue
   publish/2, publish/3,     % publish a message to a queue
+  list/1,                   % list queues
+  add_worker/1,             % add a worker
   start_link/1              % start it up
 ]).
 
@@ -27,14 +30,19 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link([])                  -> start_link("rabbitmq");
-start_link(Interface)           -> gen_server:start_link({local, ?SERVER}, ?MODULE, [Interface], []).
+start_link([])                  -> throw({error, no_interface_specified});
+start_link(Interface)           -> gen_server:start_link({local, ?SERVER}, ?MODULE, Interface, []).
 
 subscribe(QueueName)            -> subscribe(QueueName, []).
 subscribe(QueueName, Props)     -> gen_server:call(?SERVER, {subscribe, {QueueName, Props}}).
 
 publish(QueueName, Msg)         -> publish(QueueName, Msg, []).
 publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName, Msg, Props}}).
+
+submit_job(Fun)                 -> gen_server:call(?SERVER, {submit_job, Fun}).
+add_worker(Fun)                 -> gen_server:call(?SERVER, {add_worker, Fun}).
+
+list(Type)                      -> gen_server:call(?SERVER, {list, Type}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -47,24 +55,17 @@ publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init(InterfaceName) ->
-  Interface = list_to_atom(lists:flatten([InterfaceName, "_interface"])),
-  RealInterface = case (catch Interface:start_link()) of
-    {ok, _} = T -> Interface;
-    Else ->
-      squirrel_interface:start_link(),
-      squirrel_interface
-  end,
-  % case catch rabbithole_sup:start_interface(Interface, []) of
-  %   {ok, _} = T -> T;
-  %   {'EXIT', P} ->
-  %     erlang:display({error, P}),
-  %     rabbithole_sup:start_interface(squirrel_interface, []);
-  %   E ->
-  %     erlang:display({got, Interface, E}),
-  %     rabbithole_sup:start_interface(squirrel_interface, [])
+init([_InterfaceName]) ->
+  % Interface = interface_mod(InterfaceName),
+  % RealInterface = case (catch rabbithole_sup:start_interface(Interface, [])) of
+  %   {ok, _} = _T -> Interface;
+  %   _Else -> gproc_interface
   % end,
+  RealInterface = gproc_interface,
   {ok, RealInterface}.
+
+% interface_mod(List) when is_list(List) -> list_to_atom(lists:flatten([List, "_interface"]));
+% interface_mod(Mod)  when is_atom(Mod) -> list_to_atom(lists:flatten([atom_to_list(Mod), "_interface"])).
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -75,12 +76,27 @@ init(InterfaceName) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({add_worker, Fun}, _From, Interface) ->
+  Interface:subscribe({job, [{callback, 
+    fun({msg, BinMsg}) -> 
+      local132:submit_job(fun() -> Fun(erlang:binary_to_term(BinMsg)) end)
+    end}]}),
+  {reply, ok, Interface};
+  
+handle_call({submit_job, Msg}, _From, Interface) ->
+  Reply = Interface:publish({job, Msg, []}),
+  {reply, Reply, Interface};
+  
 handle_call({subscribe, Args}, _From, Interface) ->
   Reply = Interface:subscribe(Args),
   {reply, Reply, Interface};
   
 handle_call({publish, Args}, _From, Interface) ->
   Reply = Interface:publish(Args),
+  {reply, Reply, Interface};
+
+handle_call({list, Type}, _From, Interface) ->
+  Reply = Interface:list(Type),
   {reply, Reply, Interface};
 
 handle_call(_Req, _From, Interface) ->
@@ -92,8 +108,8 @@ handle_call(_Req, _From, Interface) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
-  {noreply, State}.
+handle_cast(_Msg, Interface) ->
+  {noreply, Interface}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |

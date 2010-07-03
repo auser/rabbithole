@@ -4,7 +4,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/1, start_child/1, start_interface/2]).
+-export([start_link/1, start_child/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -24,27 +24,23 @@
 %% ===================================================================
 
 start_child(Args) ->
-  supervisor:start_child(workers_sup, [Args]).
-  
-start_interface(Mod, _Args) ->
-  case catch supervisor:start_link(rabbithole_interface_sup, [Mod]) of
-    X -> X
-  end.
+  supervisor:start_child(workers_sup, Args).
 
-start_link(_Args) ->
-  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+start_link(Args) ->
+  supervisor:start_link({local, ?MODULE}, ?MODULE, [Args]).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
 
-init([]) ->
-  Server    =  ?NAMED_CHILD(rabbithole, rabbithole, [[]], worker),
-  WorkerSup  = ?SUP_CHILD(workers_sup, [{local, workers_sup}, ?MODULE, [[]]]), 
-  InterfaceSup = ?SUP_CHILD(rabbithole_interface_sup, [rabbithole_interface_sup, []]),
+init([Args]) ->
+  Server    =  ?NAMED_CHILD(rabbithole, rabbithole, [Args], worker),
+  Local132Sup = ?SUP_CHILD(local132_sup, [{local, local132_sup}, local132_sup, [erlang:system_info(schedulers)]]),
+  % WorkerSup  = ?SUP_CHILD(workers_sup, [{local, workers_sup}, ?MODULE, [[]]]),
+  Gproc     =  ?SUP_CHILD(gproc_sup, [{local, gproc_sup}, gproc_sup, []]),
     
-  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [InterfaceSup, Server, WorkerSup]}};
+  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Local132Sup, Gproc, Server]}};
 
-init([_Props]) ->
-  Child = ?NAMED_CHILD(undefined, rabbithole_srv, [], worker),
+init([Mod, Props]) ->
+  Child = ?NAMED_CHILD(undefined, Mod, Props, worker),
   {ok, {{simple_one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Child]}}.

@@ -45,15 +45,22 @@ start_link(Args) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Props]) ->
-  Queue       = get_value(queue, 'rabbithole.queue', Props),
+
   Channel     = get_value(channel, undefined, Props),
-  ForwardPid  = get_value(to, undefined, Props),
   Callback    = get_value(callback, undefined, Props),
   
-  #'basic.consume_ok'{consumer_tag = Tag} = 
-      amqp_channel:subscribe(Channel, #'basic.consume'{queue = Queue}, self()),
-  
-  {ok, #state{queue = Queue, to = ForwardPid, channel = Channel, tag = Tag, callback = Callback}}.
+  case Channel of
+    undefined ->
+      {ok, #state{callback = Callback}};
+    _ ->
+      ForwardPid  = get_value(to, undefined, Props),
+      Queue       = get_value(queue, 'rabbithole.queue', Props),
+      
+      #'basic.consume_ok'{consumer_tag = Tag} = 
+          amqp_channel:subscribe(Channel, #'basic.consume'{queue = Queue}, self()),
+
+      {ok, #state{queue = Queue, to = ForwardPid, channel = Channel, tag = Tag, callback = Callback}}
+  end.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |

@@ -9,6 +9,9 @@
 %% Application callbacks
 %% ===================================================================
 
+start(_StartType, []) ->
+  rabbithole_sup:start_link(gproc);
+  
 start(_StartType, StartArgs) ->
   rabbithole_sup:start_link(StartArgs).
 
