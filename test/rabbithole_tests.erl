@@ -16,24 +16,27 @@ starting_test_() ->
       fun setup/0,
       fun teardown/1,
       [
-        fun gproc_basic_tests/0
+        fun gproc_basic_tests/0,
+        fun gproc_add_worker_tests/0
         % fun rabbitmq_basic_tests/0
       ]
     }
   }.
 
+% Put this back in when we are ready for rabbitmq
 % rabbitmq_basic_tests() ->
 %   try
 %     rabbithole_app:start([], [rabbitmq]),
 %     Queue = "a.b.c",
-%     ?assert(ok =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
+%     ?assert(true =:= rabbithole:subscribe(Queue, [{callback, fun callback/1}])),
 %     rabbithole:publish(Queue, erlang:term_to_binary({add, 1})),
 %     timer:sleep(10),
-%     ?assert(1 == test_server:get_value()),
-%     rabbithole:publish(Queue, erlang:term_to_binary({add, 10})),
-%     rabbithole:publish(Queue, erlang:term_to_binary({subtract, 10})),
-%     timer:sleep(10),
 %     ?assert(11 == test_server:get_value()),
+%     rabbithole:publish(Queue, erlang:term_to_binary({add, 10})),
+%     rabbithole:publish(Queue, erlang:term_to_binary({subtract, 1})),
+%     timer:sleep(10),
+%     erlang:display({test_server:get_value()}),
+%     ?assert(20 == test_server:get_value()),
 %     rabbithole_app:stop([]),
 %     passed
 %   catch
@@ -67,3 +70,21 @@ gproc_basic_tests() ->
   ?assert(['a.b.c', pete] == rabbithole:list(queues)),
   rabbithole_app:stop([]),
   passed.
+
+gproc_add_worker_tests() ->
+  rabbithole_app:start([], [gproc]),
+  rabbithole:add_worker(fun job_received/1),
+  _O = timer:tc(lists, foreach, [fun(_N) ->
+    rabbithole:submit_job({time, element(3, now())})
+  end, lists:seq(1, 1000)]),
+  % erlang:display({o, O}),
+  timer:sleep(100),
+  rabbithole_app:stop([]),
+  passed.
+
+job_received({time, TimePutIn}) ->
+  % Do SOME work
+  element(3, now()) - TimePutIn;
+job_received(_List) ->
+  % erlang:display({got, List, element(3, now())}),
+  ok.
