@@ -18,23 +18,24 @@ list(queues) ->
   Q = qlc:q([ QueueName || {{p, l, {QueueName, _Fun}}, _Pid, _} <- gproc:table(props) ]),
   qlc:eval(Q).
 
+% subscribe through gproc
 subscribe({QueueName, Props}) when is_list(QueueName) -> subscribe({erlang:list_to_atom(QueueName), Props});
 subscribe({QueueName, Props}) -> 
   Fun = get_value(callback, fun unhandled/1, Props),
   gproc:reg({p, l, {QueueName, Fun}}).
 
+% publish through gproc
 publish({QueueName, Msg, Props}) when is_list(QueueName) -> publish({erlang:list_to_atom(QueueName), Msg, Props});
 publish({QueueName, Msg, _Props}) ->
-  % gproc:publish(QueueName, Msg).
   Q = qlc:q([
     case QueueName =:= ToQueue of
       false -> ok;
       true ->
-        rpc:cast(node(Pid), erlang, apply, [Fun, [{msg, erlang:term_to_binary(Msg)}]])
+        rpc:call(node(Pid), erlang, apply, [Fun, [{msg, erlang:term_to_binary(Msg)}]])
     end
     || {{p, l, {ToQueue, Fun}}, Pid, _} <- gproc:table(props) 
   ]),
-  qlc:eval(Q).
+  lists:filter(fun(T) -> T =/= ok end, qlc:eval(Q)).
 
 unhandled(Msg) ->
   io:format("Unhandled subscribe got message: ~p~n", [Msg]).

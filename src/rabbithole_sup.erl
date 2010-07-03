@@ -35,10 +35,11 @@ start_link(Args) ->
 
 init([Args]) ->
   Server    =  ?NAMED_CHILD(rabbithole, rabbithole, [Args], worker),
-  % WorkerSup  = ?SUP_CHILD(workers_sup, [{local, workers_sup}, ?MODULE, [[]]]), 
+  Local132Sup = ?SUP_CHILD(local132_sup, [{local, local132_sup}, local132_sup, [erlang:system_info(schedulers)]]),
+  % WorkerSup  = ?SUP_CHILD(workers_sup, [{local, workers_sup}, ?MODULE, [[]]]),
   Gproc     =  ?SUP_CHILD(gproc_sup, [{local, gproc_sup}, gproc_sup, []]),
     
-  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Gproc, Server]}};
+  {ok, {{one_for_one, ?MAX_RESTART, ?MAX_TIME}, [Local132Sup, Gproc, Server]}};
 
 init([Mod, Props]) ->
   Child = ?NAMED_CHILD(undefined, Mod, Props, worker),

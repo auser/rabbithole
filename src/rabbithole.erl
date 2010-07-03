@@ -9,9 +9,11 @@
 
 %% API
 -export([
+  submit_job/1,             % add a job
   subscribe/1, subscribe/2, % subscribe to a queue
   publish/2, publish/3,     % publish a message to a queue
   list/1,                   % list queues
+  add_worker/1,             % add a worker
   start_link/1              % start it up
 ]).
 
@@ -36,6 +38,9 @@ subscribe(QueueName, Props)     -> gen_server:call(?SERVER, {subscribe, {QueueNa
 
 publish(QueueName, Msg)         -> publish(QueueName, Msg, []).
 publish(QueueName, Msg, Props)  -> gen_server:call(?SERVER, {publish, {QueueName, Msg, Props}}).
+
+submit_job(Fun)                 -> gen_server:call(?SERVER, {submit_job, Fun}).
+add_worker(Fun)                 -> gen_server:call(?SERVER, {add_worker, Fun}).
 
 list(Type)                      -> gen_server:call(?SERVER, {list, Type}).
 
@@ -71,6 +76,17 @@ init([_InterfaceName]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({add_worker, Fun}, _From, Interface) ->
+  Interface:subscribe({job, [{callback, 
+    fun({msg, BinMsg}) -> 
+      local132:submit_job(fun() -> Fun(erlang:binary_to_term(BinMsg)) end)
+    end}]}),
+  {reply, ok, Interface};
+  
+handle_call({submit_job, Msg}, _From, Interface) ->
+  Reply = Interface:publish({job, Msg, []}),
+  {reply, Reply, Interface};
+  
 handle_call({subscribe, Args}, _From, Interface) ->
   Reply = Interface:subscribe(Args),
   {reply, Reply, Interface};
@@ -92,8 +108,8 @@ handle_call(_Req, _From, Interface) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
-  {noreply, State}.
+handle_cast(_Msg, Interface) ->
+  {noreply, Interface}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |

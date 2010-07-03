@@ -12,7 +12,8 @@
   start_link/0,
   stop/0,
   subscribe/1,
-  publish/1
+  publish/1,
+  list/1
 ]).
 
 %% gen_server callbacks
@@ -41,6 +42,9 @@ subscribe({QueueName, Props}) -> gen_server:call(?SERVER, {subscribe, binify(Que
 publish({QueueName, Msg, Props}) -> gen_server:call(?SERVER, {publish, binify(QueueName), binify(Msg), Props}).
 
 stop() -> gen_server:call(?MODULE, stop).
+
+list(queues) ->
+  [].
 
 %%====================================================================
 %% gen_server callbacks
@@ -100,7 +104,6 @@ handle_call({subscribe, QueueName, Props}, {Pid, _} = _From, #state{channel = Ch
 handle_call({publish, QueueName, Msg, Props}, _From, #state{channel = Chan} = State) ->
   Exchange = QueueName,
   Key = get_value(key, QueueName, Props),
-  
   Publish = #'basic.publish'{exchange = Exchange, routing_key = Key},
   AmqpMsg = #amqp_msg{payload = Msg},
   Reply = amqp_channel:call(Chan, Publish, AmqpMsg),
