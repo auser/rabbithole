@@ -84,7 +84,7 @@ gproc_add_worker_tests() ->
 
 job_received({time, TimePutIn}) ->
   % Do SOME work
-  element(3, now()) - TimePutIn;
+  element(3, now()) - TimePutIn * 3;
 job_received(_List) ->
   % erlang:display({got, List, element(3, now())}),
   ok.
